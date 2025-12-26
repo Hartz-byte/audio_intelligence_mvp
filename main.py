@@ -16,11 +16,22 @@ from instrument_classifier import InstrumentClassifier
 from speech_recognizer import SpeechRecognizer
 from post_processor import PostProcessor
 
+from fastapi.middleware.cors import CORSMiddleware
+
 # Initialize FastAPI
 app = FastAPI(
     title="Audio Intelligence MVP",
     description="Separates music/speech, identifies instruments, transcribes speech",
     version="1.0.0"
+)
+
+# Add CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
 )
 
 # Initialize models (loaded once at startup)
