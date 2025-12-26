@@ -52,7 +52,7 @@ class ModelDownloader:
     
     def download_demucs(self) -> bool:
         """Download Demucs model (Meta source separation)"""
-        print(f"{Colors.OKBLUE}[1/4] Downloading Demucs v4 (Source Separation)...{Colors.ENDC}")
+        print(f"{Colors.OKBLUE}[2/4] Downloading Demucs v4 (Source Separation)...{Colors.ENDC}")
         
         try:
             from demucs.pretrained import get_model
@@ -89,7 +89,7 @@ class ModelDownloader:
     
     def download_whisper(self) -> bool:
         """Download OpenAI Whisper model (Speech Recognition)"""
-        print(f"{Colors.OKBLUE}[2/4] Downloading Whisper-large-v3 (Speech Recognition)...{Colors.ENDC}")
+        print(f"{Colors.OKBLUE}[1/4] Downloading Whisper-large-v3 (Speech Recognition)...{Colors.ENDC}")
         
         try:
             from transformers import WhisperProcessor, WhisperForConditionalGeneration
@@ -133,7 +133,7 @@ class ModelDownloader:
     
     def download_speechbrain_vad(self) -> bool:
         """Download SpeechBrain VAD model (Voice Activity Detection)"""
-        print(f"{Colors.OKBLUE}[3/4] Downloading SpeechBrain VAD (Voice Activity Detection)...{Colors.ENDC}")
+        print(f"{Colors.OKBLUE}[4/4] Downloading SpeechBrain VAD (Voice Activity Detection)...{Colors.ENDC}")
         
         try:
             from speechbrain.pretrained import VAD
@@ -167,7 +167,7 @@ class ModelDownloader:
     
     def setup_resnet_instruments(self) -> bool:
         """Setup ResNet-50 for instrument classification"""
-        print(f"{Colors.OKBLUE}[4/4] Setting up ResNet-50 (Instrument Classification)...{Colors.ENDC}")
+        print(f"{Colors.OKBLUE}[3/4] Setting up ResNet-50 (Instrument Classification)...{Colors.ENDC}")
         
         try:
             import torch
