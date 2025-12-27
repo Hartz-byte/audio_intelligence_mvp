@@ -109,6 +109,21 @@ async def process_audio(file: UploadFile = File(...)):
                 # Classify instruments
                 print(f"    - Segment {seg_idx}: Music (analyzing instruments)...")
                 instruments = instrument_classifier.classify_instruments(seg_audio, sr)
+                for inst in instruments:
+                     print(f"      [INSTRUMENT] {inst['name']}: {inst['confidence']:.2f}")
+                
+                # CHECK FOR VOCALS (SONG MODE)
+                # Slice the vocal stem for this segment
+                vocal_seg = stems['vocals'][int(seg['start']*sr):int(seg['end']*sr)]
+                vocal_rms = np.sqrt(np.mean(vocal_seg**2))
+                
+                transcription_text = ""
+                if vocal_rms > 0.001:
+                    print(f"    - Segment {seg_idx}: Music contains vocals (RMS={vocal_rms:.4f}). Transcribing lyrics...")
+                    # Transcribe the ISOLATED vocal stem for better accuracy
+                    transcription = speech_recognizer.transcribe(vocal_seg, sr)
+                    transcription_text = transcription.get('text', '')
+
                 results.append({
                     'segment_id': seg_idx,
                     'type': 'music',
@@ -116,7 +131,8 @@ async def process_audio(file: UploadFile = File(...)):
                     'end': round(seg['end'], 2),
                     'duration': round(seg['end'] - seg['start'], 2),
                     'confidence': round(seg['confidence'], 3),
-                    'instruments': instruments
+                    'instruments': instruments,
+                    'transcription': transcription_text # Include lyrics if found
                 })
             else:  # speech
                 # Transcribe speech

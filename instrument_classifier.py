@@ -71,10 +71,16 @@ class InstrumentClassifier:
         
         # Simple frequency-based mapping logic
         # High frequency content -> Flute, Violin, Cymbals
+        # High frequency content -> Check noisiness (ZCR) to distinguish Cymbals/Drums from Violin/Flute
         if centroid_mean > 3000:
-            scores[self.instruments.index('flute')] += 0.3
-            scores[self.instruments.index('violin')] += 0.3
-            scores[self.instruments.index('cymbal')] += 0.4
+            if zcr_mean > 0.05:
+                # High frequency + Noisy = Cymbals/Hi-hats
+                scores[self.instruments.index('cymbal')] += 0.5
+                scores[self.instruments.index('drums')] += 0.3
+            else:
+                # High frequency + Harmonic = Flute/Violin
+                scores[self.instruments.index('flute')] += 0.4
+                scores[self.instruments.index('violin')] += 0.4
         elif centroid_mean > 1500:
             scores[self.instruments.index('guitar')] += 0.4
             scores[self.instruments.index('trumpet')] += 0.3

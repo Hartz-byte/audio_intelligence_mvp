@@ -67,7 +67,7 @@ export function ResultsDashboard({ result }: ResultsDashboardProps) {
                                     </div>
                                 )}
 
-                                {segment.type === 'speech' && segment.transcription && (
+                                {segment.transcription && segment.transcription.length > 0 && (
                                     <div className="mt-2 text-sm text-foreground/90 bg-black/20 p-3 rounded-lg border border-white/5">
                                         <div className="flex items-start gap-2">
                                             <AlignLeft className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
