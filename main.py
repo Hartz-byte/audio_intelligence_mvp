@@ -7,6 +7,7 @@ import time
 from datetime import datetime
 import numpy as np
 import torch
+import librosa
 
 # Local imports
 from audio_processor import AudioProcessor
@@ -118,8 +119,17 @@ async def process_audio(file: UploadFile = File(...)):
                 vocal_rms = np.sqrt(np.mean(vocal_seg**2))
                 
                 transcription_text = ""
-                if vocal_rms > 0.001:
+                active_vocal_duration = 0.0
+                
+                if vocal_rms > 0.005:
                     print(f"    - Segment {seg_idx}: Music contains vocals (RMS={vocal_rms:.4f}). Transcribing lyrics...")
+                    
+                    # Calculate actual vocal activity duration (VAD)
+                    # top_db=20 means any sound within 20dB of the peak is considered 'active'
+                    non_silent_intervals = librosa.effects.split(vocal_seg, top_db=20)
+                    active_samples = sum([end - start for start, end in non_silent_intervals])
+                    active_vocal_duration = active_samples / sr
+                    
                     # Transcribe the ISOLATED vocal stem for better accuracy
                     transcription = speech_recognizer.transcribe(vocal_seg, sr)
                     transcription_text = transcription.get('text', '')
@@ -132,7 +142,8 @@ async def process_audio(file: UploadFile = File(...)):
                     'duration': round(seg['end'] - seg['start'], 2),
                     'confidence': round(seg['confidence'], 3),
                     'instruments': instruments,
-                    'transcription': transcription_text # Include lyrics if found
+                    'transcription': transcription_text, # Include lyrics if found
+                    'speech_active_duration': round(active_vocal_duration, 2)
                 })
             else:  # speech
                 # Transcribe speech
@@ -155,7 +166,14 @@ async def process_audio(file: UploadFile = File(...)):
         # 6. Generate summary
         print("  [6/6] Generating summary...")
         music_duration = sum([s['duration'] for s in results if s['type']=='music'])
-        speech_duration = sum([s['duration'] for s in results if s['type']=='speech'])
+        music_duration = sum([s['duration'] for s in results if s['type']=='music'])
+        speech_duration = 0.0
+        for s in results:
+            if s['type'] == 'speech':
+                speech_duration += s['duration']
+            elif s['type'] == 'music' and s.get('transcription'):
+                # Use precise VAD duration if available, otherwise 0 (shouldn't happen with new logic)
+                speech_duration += s.get('speech_active_duration', 0.0)
         
         all_instruments = []
         for seg in results:

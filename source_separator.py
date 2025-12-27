@@ -28,19 +28,36 @@ class SourceSeparator:
             elif audio_tensor.ndim == 2:
                 # Add batch dimension: (1, channels, time)
                 audio_tensor = audio_tensor.unsqueeze(0)
+            
+            # Demucs expects Stereo (2 channels)
+            # If mono, we must duplicate channel
+            if audio_tensor.shape[1] == 1:
+                audio_tensor = audio_tensor.repeat(1, 2, 1)
 
-            # Separate (Demucs auto-handles resampling if needed, but best to match model.samplerate)
+            # Separate
+            model_sr = self.model.samplerate
+            
+            # Resample if mismatch (e.g. 16k -> 44.1k)
+            # Demucs expects audio at model_sr
+            if sr != model_sr:
+                audio_tensor = torchaudio.functional.resample(audio_tensor, sr, model_sr)
+            
+            # Normalize (Demucs expects normalized audio)
             ref = audio_tensor.mean(0)
             audio_tensor = (audio_tensor - ref.mean()) / ref.std()
 
             # Apply separation
             sources = apply_model(self.model, audio_tensor, shifts=1, split=True, overlap=0.25, progress=False)[0]
             # sources shape is (Sources, Channels, Time)
+            
+            # Resample back to original SR if needed (44.1k -> 16k)
+            if sr != model_sr:
+                sources = torchaudio.functional.resample(sources, model_sr, sr)
 
-            print(f"[SOURCE SEP] Vocals energy: {float(np.sqrt(np.mean(sources[0].cpu().numpy()**2))):.8f}", flush=True)
-            print(f"[SOURCE SEP] Drums energy: {float(np.sqrt(np.mean(sources[1].cpu().numpy()**2))):.8f}", flush=True)
-            print(f"[SOURCE SEP] Bass energy: {float(np.sqrt(np.mean(sources[2].cpu().numpy()**2))):.8f}", flush=True)
-            print(f"[SOURCE SEP] Other energy: {float(np.sqrt(np.mean(sources[3].cpu().numpy()**2))):.8f}", flush=True)
+            # Print energy for each source
+            for i, name in enumerate(self.model.sources):
+                energy = float(np.sqrt(np.mean(sources[i].cpu().numpy()**2)))
+                print(f"[SOURCE SEP] {name.capitalize()} energy: {energy:.8f}", flush=True)
             
             # Map sources based on model order
             source_names = self.model.sources

@@ -74,7 +74,7 @@ function App() {
           </main>
 
           <footer className="mt-20 text-center text-sm text-muted-foreground">
-            <p>© 2025 Audio Intelligence MVP. Powered by FastAPI & React.</p>
+            <p>Build by an AI/ML Engineer | Harsh Gupta</p>
           </footer>
         </div>
       </div>
