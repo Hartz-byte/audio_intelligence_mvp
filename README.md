@@ -53,44 +53,44 @@ This project orchestrates multiple advanced models to achieve its results:
 ```mermaid
 graph TD
     User[User Upload] -->|Audio File| API[FastAPI Backend]
-    API -->|Load & Norm| AP[Audio Processor]
-    
+    API -->|Load & Normalize| AP[Audio Processor]
+
     subgraph Core Pipeline
-    AP -->|Raw Audio| SS[Source Separator<br/>(Demucs htdemucs)]
-    
-    SS -->|Vocals| Stems[Stems]
-    SS -->|Drums| Stems
-    SS -->|Bass| Stems
-    SS -->|Other| Stems
-    
-    Stems -->|Energy Analysis| Seg[Segmenter]
-    
-    Seg -->|Type: Speech| SpeechSeg[Speech Process]
-    Seg -->|Type: Music| MusicSeg[Music Process]
-    
-    subgraph Speech Process
-    SpeechSeg -->|Raw Audio| W1[Whisper AI]
-    W1 -->|Transcribe| T1[Text]
+        AP -->|Raw Audio| SS[Source Separator\nDemucs htdemucs]
+
+        SS -->|Vocals| Stems[Separated Stems]
+        SS -->|Drums| Stems
+        SS -->|Bass| Stems
+        SS -->|Other| Stems
+
+        Stems -->|Energy Analysis| Seg[Segmenter]
+
+        Seg -->|Speech| SpeechSeg[Speech Pipeline]
+        Seg -->|Music| MusicSeg[Music Pipeline]
+
+        subgraph Speech Pipeline
+            SpeechSeg -->|Raw Audio| W1[Whisper Large v3]
+            W1 -->|Transcription| T1[Speech Text]
+        end
+
+        subgraph Music Pipeline
+            MusicSeg -->|Features| IC[Instrument Classifier]
+            IC -->|Detected| Inst[Instruments]
+
+            MusicSeg -.->|Vocal Stem| W2[Whisper Song Mode]
+            W2 -.->|Lyrics| T2[Song Lyrics]
+
+            MusicSeg -->|Vocal Stem| VAD[VAD Engine]
+            VAD -->|Durations| Stats[Speech Percentage]
+        end
     end
-    
-    subgraph Music Process
-    MusicSeg -->|Raw Audio| IC[Instrument Classifier]
-    IC -->|Heuristics| Inst[Instruments]
-    
-    MusicSeg -.->|Extract Vocals Stem| W2[Whisper AI<br/>(Song Mode)]
-    W2 -.->|Transcribe| T2[Lyrics]
-    
-    MusicSeg -->|Extract Vocal Stem| VAD[VAD Analysis]
-    VAD -->|Calc Duration| Stats[Speech % Stats]
-    end
-    end
-    
+
     T1 --> Agg[Post Processor]
     Inst --> Agg
     T2 --> Agg
     Stats --> Agg
-    
-    Agg -->|JSON Result| FE[React Frontend]
+
+    Agg -->|JSON Output| FE[React Frontend]
 ```
 
 ---
