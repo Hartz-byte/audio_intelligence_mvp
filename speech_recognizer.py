@@ -4,8 +4,7 @@ import numpy as np
 import librosa
 
 class SpeechRecognizer:
-    def __init__(self, model_name: str = "openai/whisper-base", 
-                 device: str = None):
+    def __init__(self, model_name: str = "openai/whisper-large-v3", device: str = None):
         if device is None:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
         else:
@@ -37,6 +36,8 @@ class SpeechRecognizer:
             )
             
             input_features = inputs.input_features.to(self.device)
+            if self.device == "cuda":
+                input_features = input_features.half()
             
             # Generate transcription
             with torch.no_grad():
@@ -49,7 +50,7 @@ class SpeechRecognizer:
             )
             
             return {
-                'text': transcription,
+                'text': transcription[0] if transcription else "",
                 'language': 'en',
                 'confidence': 0.92
             }

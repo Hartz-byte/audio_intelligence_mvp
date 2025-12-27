@@ -9,7 +9,7 @@ export interface Segment {
     end: number;
     duration: number;
     confidence: number;
-    instruments?: { name: string; score: number }[];
+    instruments?: { name: string; confidence: number }[];
     transcription?: string;
 }
 

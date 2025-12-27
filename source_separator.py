@@ -1,6 +1,7 @@
 import torch
 import torchaudio
 from demucs.pretrained import get_model
+from demucs.apply import apply_model
 import numpy as np
 
 class SourceSeparator:
@@ -19,23 +20,41 @@ class SourceSeparator:
         """Separate audio into stems: vocals, drums, bass, other."""
         try:
             # Convert numpy to tensor
-            audio_tensor = torch.FloatTensor(audio).unsqueeze(0).to(self.device)
+            audio_tensor = torch.FloatTensor(audio).to(self.device)
+
+            if audio_tensor.ndim == 1:
+                # Add channel and batch dimension: (1, 1, time)
+                 audio_tensor = audio_tensor.unsqueeze(0).unsqueeze(0)
+            elif audio_tensor.ndim == 2:
+                # Add batch dimension: (1, channels, time)
+                audio_tensor = audio_tensor.unsqueeze(0)
+
+            # Separate (Demucs auto-handles resampling if needed, but best to match model.samplerate)
+            ref = audio_tensor.mean(0)
+            audio_tensor = (audio_tensor - ref.mean()) / ref.std()
+
+            # Apply separation
+            sources = apply_model(self.model, audio_tensor, shifts=1, split=True, overlap=0.25, progress=False)[0]
+            # sources shape is (Sources, Channels, Time)
+
+            print(f"[SOURCE SEP] Vocals energy: {float(np.sqrt(np.mean(sources[0].cpu().numpy()**2))):.8f}", flush=True)
+            print(f"[SOURCE SEP] Drums energy: {float(np.sqrt(np.mean(sources[1].cpu().numpy()**2))):.8f}", flush=True)
+            print(f"[SOURCE SEP] Bass energy: {float(np.sqrt(np.mean(sources[2].cpu().numpy()**2))):.8f}", flush=True)
+            print(f"[SOURCE SEP] Other energy: {float(np.sqrt(np.mean(sources[3].cpu().numpy()**2))):.8f}", flush=True)
             
-            # Ensure 2 channels for Demucs
-            if audio_tensor.shape == 1:
-                audio_tensor = audio_tensor.repeat(1, 2, 1)
+            # Map sources based on model order
+            source_names = self.model.sources
+            result = {}
             
-            # Separate
-            with torch.no_grad():
-                stems = self.model.separate(audio_tensor)
+            for i, name in enumerate(source_names):
+                # Take mean across channels to get mono stem
+                stem = sources[i].mean(0).cpu().numpy()
+                result[name] = stem
             
-            # Extract individual stems
-            result = {
-                'vocals': stems[0, 0, 0].cpu().numpy() if stems.shape > 0 else np.zeros_like(audio),
-                'drums': stems[0, 1, 0].cpu().numpy() if stems.shape > 1 else np.zeros_like(audio),
-                'bass': stems[0, 2, 0].cpu().numpy() if stems.shape > 2 else np.zeros_like(audio),
-                'other': stems[0, 3, 0].cpu().numpy() if stems.shape > 3 else np.zeros_like(audio),
-            }
+            # Ensure all expected keys exist
+            for expected in ['vocals', 'drums', 'bass', 'other']:
+                if expected not in result:
+                    result[expected] = np.zeros_like(audio)
             
             return result
         

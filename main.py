@@ -40,8 +40,8 @@ processor = AudioProcessor()
 separator = SourceSeparator()
 segmenter = Segmenter()
 instrument_classifier = InstrumentClassifier()
-speech_recognizer = SpeechRecognizer()
 post_processor = PostProcessor()
+speech_recognizer = SpeechRecognizer(model_name="openai/whisper-large-v3")
 print("Models loaded successfully!")
 
 @app.get("/")
@@ -129,7 +129,7 @@ async def process_audio(file: UploadFile = File(...)):
                     'end': round(seg['end'], 2),
                     'duration': round(seg['end'] - seg['start'], 2),
                     'confidence': round(seg['confidence'], 3),
-                    'transcription': transcription
+                    'transcription': transcription.get('text', '')
                 })
         
         # 5. Post-processing

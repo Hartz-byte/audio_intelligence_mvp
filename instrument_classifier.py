@@ -56,9 +56,44 @@ class InstrumentClassifier:
             return [{'name': 'error', 'confidence': 0.0}]
     
     def _predict_instruments(self, features: np.ndarray) -> np.ndarray:
-        """Simple heuristic-based prediction (MVP)."""
-        # Random but repeatable scores for MVP
-        np.random.seed(hash(features.tobytes()) % 2**32)
-        scores = np.random.rand(len(self.instruments))
-        scores = scores / np.sum(scores)  # Normalize
+        """Heuristic based on spectral features."""
+        # features indices: 
+        # 0-12: mfcc_mean
+        # 13-25: mel_spec_mean
+        # 26: spectral_centroid_mean
+        # 27: spectral_centroid_std
+        # 28: zero_crossing_mean
+        
+        centroid_mean = features[26]
+        zcr_mean = features[28]
+        
+        scores = np.zeros(len(self.instruments))
+        
+        # Simple frequency-based mapping logic
+        # High frequency content -> Flute, Violin, Cymbals
+        if centroid_mean > 3000:
+            scores[self.instruments.index('flute')] += 0.3
+            scores[self.instruments.index('violin')] += 0.3
+            scores[self.instruments.index('cymbal')] += 0.4
+        elif centroid_mean > 1500:
+            scores[self.instruments.index('guitar')] += 0.4
+            scores[self.instruments.index('trumpet')] += 0.3
+            scores[self.instruments.index('piano')] += 0.2
+        else:
+            scores[self.instruments.index('cello')] += 0.3
+            scores[self.instruments.index('bassoon')] += 0.3
+            scores[self.instruments.index('drums')] += 0.2
+
+        # High zero-crossing -> Percussive/Noisy
+        if zcr_mean > 0.1:
+            scores[self.instruments.index('drums')] += 0.4
+            scores[self.instruments.index('cymbal')] += 0.3
+        
+        # Normalize
+        if np.sum(scores) > 0:
+            scores = scores / np.sum(scores)
+        else:
+            # Fallback uniform
+            scores = np.ones(len(self.instruments)) / len(self.instruments)
+            
         return scores

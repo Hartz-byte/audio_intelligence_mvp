@@ -42,10 +42,10 @@ class AudioProcessor:
     def remove_silence(self, audio: np.ndarray, threshold: float = 0.01) -> np.ndarray:
         """Remove leading/trailing silence."""
         non_silent = np.abs(audio) > threshold
-        indices = np.where(non_silent)
+        indices = np.where(non_silent)[0]
         
         if len(indices) > 0:
-            return audio[indices:indices[-1]]
+            return audio[indices[0]:indices[-1]+1]
         return audio
     
     def extract_mfcc(self, audio: np.ndarray, n_mfcc: int = 13) -> np.ndarray:

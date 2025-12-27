@@ -27,7 +27,7 @@ class PostProcessor:
         # Sort by start time
         sorted_seg = sorted(segments, key=lambda x: x['start'])
         
-        merged = [sorted_seg]
+        merged = [sorted_seg[0]]
         
         for current in sorted_seg[1:]:
             last = merged[-1]

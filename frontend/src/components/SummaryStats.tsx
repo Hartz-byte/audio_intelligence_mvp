@@ -35,7 +35,7 @@ export function SummaryStats({ summary }: SummaryStatsProps) {
         {
             label: "Instruments",
             value: summary.unique_instruments.length,
-            subval: summary.unique_instruments.join(', ') || "None",
+            subval: summary.unique_instruments?.join(', ') || "None",
             icon: Clock, // Keeping clock for layout consistency or change to guitar icon if available
             color: "text-orange-500",
             bg: "bg-orange-500/10"

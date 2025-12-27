@@ -61,7 +61,7 @@ export function ResultsDashboard({ result }: ResultsDashboardProps) {
                                     <div className="flex flex-wrap gap-2 mt-2">
                                         {segment.instruments.map((inst, i) => (
                                             <span key={i} className="text-xs px-2 py-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                                                {inst.name} ({Math.round(inst.score * 100)}%)
+                                                {inst.name} ({Math.round((inst.confidence || 0) * 100)}%)
                                             </span>
                                         ))}
                                     </div>
