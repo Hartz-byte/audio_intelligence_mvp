@@ -31,32 +31,40 @@ The system follows a linear, multi-branch pipeline architecture.
 
 ```mermaid
 graph TD
-    Input[Input Audio] --> Pre[preprocessing (44.1kHz / Stereo)]
-    Pre --> Demucs[Source Separation (HtDemucs)]
-    
-    Demucs --> Stems{Analyze Stems}
-    
-    Stems -->|High Rhythm/Bass| TypeMusic[Classify: MUSIC]
-    Stems -->|Low Rhythm/High Vocals| TypeSpeech[Classify: SPEECH]
-    
+    Input[Input Audio]
+    Input --> Pre[Audio Preprocessing]
+
+    Pre --> Rate[Sample Rate 44.1kHz]
+    Rate --> Stereo[Stereo Normalization]
+
+    Stereo --> Demucs[Source Separation HtDemucs]
+
+    Demucs --> Stems[Separated Stems]
+
+    Stems --> MusicCheck[Music Detection]
+    Stems --> SpeechCheck[Speech Detection]
+
+    MusicCheck --> Music[Music Branch]
+    SpeechCheck --> Speech[Speech Branch]
+
     subgraph Music Branch
-        TypeMusic --> Inst[Instrument Classifier]
-        TypeMusic --> VocCheck{Vocals Present?}
-        VocCheck -- Yes --> Isol[Isolate Vocal Stem]
-        Isol --> WhisMusic[Whisper (Song Mode)]
-        Isol --> VAD[VAD Analysis]
+        Music --> Inst[Instrument Classifier]
+        Music --> Vocals[Vocals Detection]
+        Vocals --> Isolate[Vocal Stem Isolation]
+        Isolate --> SongWhisper[Whisper Song Mode]
+        Isolate --> VAD[VAD Analysis]
     end
-    
+
     subgraph Speech Branch
-        TypeSpeech --> WhisSpeech[Whisper (Standard)]
+        Speech --> SpeechWhisper[Whisper Standard Mode]
     end
-    
-    Inst --> Result
-    WhisMusic --> Result
+
+    Inst --> Result[Aggregate Results]
+    SongWhisper --> Result
     VAD --> Result
-    WhisSpeech --> Result
-    
-    Result --> FinalJSON[JSON Response]
+    SpeechWhisper --> Result
+
+    Result --> Output[Final JSON Response]
 ```
 
 ### Core Components
